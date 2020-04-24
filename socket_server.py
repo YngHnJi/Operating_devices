@@ -1,7 +1,7 @@
 # socket_server.py
 
-# temp1.py
 # Server Part
+# Reference: https://lidron.tistory.com/44
 
 import socketserver
 import threading
@@ -69,22 +69,25 @@ class TcpHandler(socketserver.BaseRequestHandler):
         print('[%s] 연결됨' %self.client_address[0])
 
         try:
-            username= self.registerUsername()
-            print("Devices Connected [%d / %d]" %(len(self.userman.users), NUM_DEVICE))
+            username = self.registerUsername()
+            print("Num Devices Connected [%d / %d]" %(len(self.userman.users), NUM_DEVICE))
 
             if(len(self.userman.users) == NUM_DEVICE):
                 print("All devices ready to be operated")
-                msg = input("Type the command: ")
+                #msg = input("Type the command: ")
                 # ===========> if msg not appropriate, get again
-                while msg:
+                while True:
                     # ===> Put msg input in here for while loop
                     # if msg not in the list, type input again
-
+                    msg = input("Type the command: ")
+                    if(not msg):
+                        ####### try to get input one more
+                        break
+                    elif(msg == "quit"):
+                        print('--- Close operating system.')
+                        ####### give keyboard interrupt
                     print(msg)
                     self.userman.messageHandler(username, msg)
-
-                    #echo_msg = self.request.recv(1024)
-                    msg = input("Type the command: ")
 
             else:
                 msg = self.request.recv(1024)
@@ -121,6 +124,6 @@ def runServer():
 
 
 if __name__=="__main__":
-    NUM_DEVICE = int(input("Type num of Devices you run: "))
+    NUM_DEVICE = int(input("Type num of Devices you operate: "))
 
     runServer()
