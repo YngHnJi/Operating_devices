@@ -87,7 +87,7 @@ class socket_client():
                 pass
 
 def runSys():
-    client = socket_client(HOST = '210.123.42.42', PORT = 5050, DEVICE_NAME = "DEVICE 1")
+    client = socket_client(HOST, PORT, DEVICE_NAME)
 
     client.conn2server()
 
