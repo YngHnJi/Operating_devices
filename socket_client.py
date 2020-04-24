@@ -9,37 +9,8 @@ from threading import Thread
 from time import ctime
 
 HOST = '210.123.42.42'
-PORT = 5050
+PORT = 5051
 DEVICE_NAME = "DEVICE 1"
-
-def rcvMsg(sock):
-    while True:
-        try:
-            data = sock.recv(1024)
-            if not data:
-                break
-            elif(data.decode() == "quit"):
-                break
-
-            print(data.decode())
-            if(data.decode == "time"):
-                ntp_time()
-
-        except:
-            pass
-
-def runSys1():
-    syncer = sync_time(ntp_domain="time.windows.com")
-
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-        sock.connect((HOST, PORT))
-
-        init_id = DEVICE_NAME
-        sock.send(init_id.encode())
-
-        rcvMsg(sock)
-
-    print("===> Client System closed")
 
 class sync_time(): # class to sync time based on provided domain 
     def __init__(self, ntp_domain):
@@ -49,12 +20,12 @@ class sync_time(): # class to sync time based on provided domain
     def get_NTPTime(self):
         response = self.c.request(self.timeServer, version=3)
         cur_time = ctime(response.tx_time)
+        print("diff b/w Sever and Local time %.2f s" %(response.offset))
+
         return cur_time
 
 class socket_client():
-
     time_sync = sync_time("time.windows.com")
-
 
     def __init__(self, HOST, PORT, DEVICE_NAME):
         self.host_ip = HOST
@@ -79,7 +50,7 @@ class socket_client():
                     break
 
                 # Device Operating part
-                print(data.decode())
+                print("Received CMD: ", data.decode())
                 if(data.decode() == "time"):
                     print(self.time_sync.get_NTPTime())
                 

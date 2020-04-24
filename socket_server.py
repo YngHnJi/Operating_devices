@@ -7,16 +7,11 @@ import socketserver
 import threading
 
 HOST = '210.123.42.42'
-PORT = 5050
+PORT = 5051
 NUM_DEVICE = 0
 lock = threading.Lock() # syncronized 동기화 진행하는 스레드 생성
 
-class UserManager: # 사용자관리 및 채팅 메세지 전송을 담당하는 클래스
-  # ① 채팅 서버로 입장한 사용자의 등록
-  # ② 채팅을 종료하는 사용자의 퇴장 관리
-  # ③ 사용자가 입장하고 퇴장하는 관리
-  # ④ 사용자가 입력한 메세지를 채팅 서버에 접속한 모두에게 전송
-
+class UserManager:
     def __init__(self):
         self.users = {} # 사용자의 등록 정보를 담을 사전 {사용자 이름:(소켓,주소),...}
 
@@ -31,20 +26,8 @@ class UserManager: # 사용자관리 및 채팅 메세지 전송을 담당하는
         lock.release() # 업데이트 후 락 해제
 
         self.sendMessageToAll('[%s] Connected to Server' %username)
-        #print('+++ 대화 참여자 수 [%d]' %len(self.users))
        
         return username
-
-    def removeUser(self, username): #사용자를 제거하는 함수
-        if username not in self.users:
-            return
-
-        lock.acquire()
-        del self.users[username]
-        lock.release()
-
-        self.sendMessageToAll('[%s]님이 퇴장했습니다.' %username)
-        #print('--- 대화 참여자 수 [%d]' %len(self.users))
 
     def messageHandler(self, username, msg): # 전송한 msg를 처리하는 부분
         if msg[0] != '/': # 보낸 메세지의 첫문자가 '/'가 아니면
@@ -52,21 +35,17 @@ class UserManager: # 사용자관리 및 채팅 메세지 전송을 담당하는
             self.sendMessageToAll(msg)
             return
 
-        if msg.strip() == '/quit': # 보낸 메세지가 'quit'이면, stop program
-            self.removeUser(username)
-            return -1
-
     def sendMessageToAll(self, msg):
         for conn, addr in self.users.values():
             conn.send(msg.encode())
 
 
 # class react when request comes from client
-class TcpHandler(socketserver.BaseRequestHandler):
+class TCPHandler(socketserver.BaseRequestHandler):
     userman = UserManager()
    
     def handle(self): # 클라이언트가 접속시 클라이언트 주소 출력
-        print('[%s] 연결됨' %self.client_address[0])
+        print('[%s] Connected' %self.client_address[0])
 
         try:
             username = self.registerUsername()
@@ -74,30 +53,25 @@ class TcpHandler(socketserver.BaseRequestHandler):
 
             if(len(self.userman.users) == NUM_DEVICE):
                 print("All devices ready to be operated")
-                #msg = input("Type the command: ")
-                # ===========> if msg not appropriate, get again
                 while True:
-                    # ===> Put msg input in here for while loop
-                    # if msg not in the list, type input again
                     msg = input("Type the command: ")
                     if(not msg):
                         ####### try to get input one more
-                        break
+                        print("Check the command provided")
+                        while(msg):
+                            msg = input("ReType the command: ")
                     elif(msg == "quit"):
-                        print('--- Close operating system.')
-                        ####### give keyboard interrupt
+                        print('===> Closing operating system.')
+                        print('===> Type Ctrl+C to end the System.')
+                        return
                     print(msg)
-                    self.userman.messageHandler(username, msg)
 
+                    # Handle 
+                    self.userman.messageHandler(username, msg)
             else:
                 msg = self.request.recv(1024)
-
-               
         except Exception as e:
             print(e)
-
-        #print('[%s] 접속종료' %self.client_address[0])
-        #self.userman.removeUser(username)
 
     def registerUsername(self):
         while True:
@@ -115,13 +89,14 @@ def runServer():
     print('===> Type Ctrl+C to end the System.')
 
     try:
-        server = OperatingServer((HOST, PORT), TcpHandler)
+        socketserver.TCPServer.allow_reuse_address = True
+        server = OperatingServer((HOST, PORT), TCPHandler)
         server.serve_forever()
     except KeyboardInterrupt:
-        print('--- Close operating system.')
         server.shutdown()
         server.server_close()
 
+    print("\n===> Server Shutting down")
 
 if __name__=="__main__":
     NUM_DEVICE = int(input("Type num of Devices you operate: "))
